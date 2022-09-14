@@ -1,0 +1,45 @@
+clear; 
+close all;
+clc;
+
+%Random Input Generation
+N = 100000;
+m = randi([0,1],1,N);
+
+%Mapping
+for i=1:N
+    if m(i) == 0
+        x(i) = 0;
+    else
+        x(i) = 1;
+    end
+end
+
+BASK_sim = [];
+BASK_chern = [];
+BASK_erfc = [];
+BASK_qfunc = [];
+
+for EbNodB = 0:1:15
+    EbNo = 10^(EbNodB/10);
+    sigma = sqrt(1/(2*EbNo));    
+    rt = x + sigma.*randn(1,N);         %AWGN
+    m_cap = (rt>0.5);                   %Threshold
+    err = (sum(m~=m_cap))/N;
+    BASK_sim = [BASK_sim err];          %Simulation
+    erf = 0.5*erfc(sqrt(EbNo/4));
+    BASK_erfc = [BASK_erfc erf];        %Theoretical erfc
+    q = qfunc(sqrt(EbNo/2));
+    BASK_qfunc = [BASK_qfunc q];        %Theoretical Qfunc
+    chern = 0.5*exp(-EbNo/4);
+    BASK_chern = [BASK_chern chern];    %Chernoff bound
+end
+
+figure
+EbNodB = 0:1:15;
+semilogy(EbNodB, BASK_sim, "r*-", EbNodB, BASK_erfc, "mo-", EbNodB, BASK_qfunc, "b*-", EbNodB,BASK_chern,"g^-")
+title("BASK BER");
+xlabel("SNR(Eb/No)");
+ylabel("Bit Error Rate");
+legend('Simulation','Theoretical-erfc','Theoretical-qfunc','Chernoff');
+grid on;
